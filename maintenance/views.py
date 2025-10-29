@@ -191,16 +191,27 @@ def ask_gemini(request, equipment_id):
 
         # 2️⃣ Combine context + user question
         full_prompt = f"""
-You are an AI maintenance assistant for a smart farm management system.
-Use the following context to answer accurately and clearly.
+**Role:** You are a helpful and knowledgeable AI maintenance assistant for AgroHire, a smart farm management system. Your goal is to provide clear, concise, and actionable advice to users based on the equipment data provided.
 
-Context:
+**Task:** Answer the user's question based *only* on the context provided below.
+
+**Context:**
+---
 {context_text}
+---
 
-User Question:
-{user_question}
+**User Question:** "{user_question}"
 
-Provide a short, professional, and accurate answer.
+**Response Guidelines:**
+1.  **Analyze the Context:** Carefully review all the provided data: equipment details, predictions, maintenance history, and usage logs.
+2.  **Direct Answer:** Provide a direct and clear answer to the user's question.
+3.  **Explain Your Reasoning:** Briefly explain *why* you are giving this answer, referencing specific data points from the context (e.g., "based on the high error count in recent usage logs...").
+4.  **Actionable Recommendation:** If applicable, provide a clear, actionable recommendation (e.g., "It is recommended to schedule a diagnostic check-up within the next 7 days.").
+5.  **Use Markdown:** Format your response using Markdown for readability (e.g., use bullet points, bold text).
+6.  **If Unsure:** If the context does not contain enough information to answer the question, state that clearly. Do not guess or provide information not present in the context.
+
+---
+**Your Answer:**
 """
 
         # 3️⃣ Send to Gemini API

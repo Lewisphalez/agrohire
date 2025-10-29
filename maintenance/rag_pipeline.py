@@ -26,10 +26,10 @@ def get_available_model():
         print("✅ Available Gemini models:", models)
 
         preferred = [
+            "models/gemini-2.5-pro",
+            "models/gemini-pro-latest",
             "models/gemini-1.5-pro-latest",
             "models/gemini-1.5-flash-latest",
-            "models/gemini-1.5-pro",
-            "models/gemini-1.0-pro",
             "models/gemini-pro",
         ]
         for candidate in preferred:
@@ -37,8 +37,8 @@ def get_available_model():
                 print(f"✅ Using Gemini model: {candidate}")
                 return candidate
 
-        print("⚠️ No preferred model found. Defaulting to models/gemini-pro.")
-        return "models/gemini-pro"
+        print("⚠️ No preferred model found. Defaulting to models/gemini-2.5-pro.")
+        return "models/gemini-2.5-pro"
 
     except Exception as e:
         print(f"⚠️ Could not list Gemini models: {e}")
@@ -113,12 +113,19 @@ def build_equipment_context(equipment_id, max_history=5):
 # =============================================================================
 # 🤖 4. GENERATE GEMINI ANSWER (GENERATION STAGE)
 # =============================================================================
-def generate_gemini_answer(prompt_text, model_name=None, temperature=0.2, max_output_tokens=512):
+def generate_gemini_answer(prompt_text, model_name=None, temperature=0.2, max_output_tokens=2048):
     """
     Send prompt to Gemini and return a response.
     Includes model auto-fallback and better error handling.
     """
     model_name = model_name or GEMINI_MODEL
+
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+    ]
 
     try:
         model = genai.GenerativeModel(model_name)
@@ -128,22 +135,25 @@ def generate_gemini_answer(prompt_text, model_name=None, temperature=0.2, max_ou
                 "temperature": temperature,
                 "max_output_tokens": max_output_tokens,
             },
+            safety_settings=safety_settings,
         )
+
+        if response.candidates and response.candidates[0].finish_reason.name == 'MAX_TOKENS':
+            print("⚠️ Response stopped due to MAX_TOKENS.")
+            # Return the partial response if it exists
+            return getattr(response, "text", "Response was cut off due to maximum length.")
+
+        if not response.candidates or response.candidates[0].finish_reason.name != 'STOP':
+            feedback = getattr(response, 'prompt_feedback', 'No feedback available.')
+            error_details = f"Response blocked. Finish Reason: {response.candidates[0].finish_reason.name if response.candidates else 'N/A'}. Prompt Feedback: {feedback}"
+            print(f"⚠️ {error_details}")
+            return f"The response was blocked. Details: {error_details}"
+
         return getattr(response, "text", str(response)).strip()
 
     except Exception as e:
         error_message = str(e)
         print(f"⚠️ Gemini API error: {error_message}")
 
-        # Fallback if model not found or unsupported
-        if "404" in error_message or "not found" in error_message:
-            fallback_model = "models/gemini-pro" if "pro" in model_name else "models/gemini-pro"
-            print(f"🔁 Retrying with fallback model: {fallback_model}")
-            try:
-                fallback = genai.GenerativeModel(fallback_model)
-                response = fallback.generate_content(prompt_text)
-                return getattr(response, "text", str(response)).strip()
-            except Exception as inner:
-                return f"Gemini fallback also failed: {inner}"
-
+        # Fallback logic can be simplified or removed if not needed
         return f"Error contacting Gemini API: {error_message}"
