@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold mb-0">Maintenance Hub</h2>
+    <div>
+      {% if is_admin %}
+        <span class="badge bg-dark">Admin View</span>
+      {% else %}
+        <span class="badge bg-success">Equipment Owner</span>
+      {% endif %}
+      <button class="btn btn-outline-secondary btn-sm ms-2" id="refreshBtn">Refresh</button>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-md-4 text-center">
+          <canvas id="riskChart" width="250" height="200"></canvas>
+        </div>
+        <div class="col-md-8">
+          <h5>Risk summary</h5>
+          <div class="d-flex gap-3 flex-wrap mt-2">
+            <div><span class="badge bg-danger">Critical: {{ risk_counts.critical }}</span></div>
+            <div><span class="badge bg-warning text-dark">High: {{ risk_counts.high }}</span></div>
+            <div><span class="badge bg-info text-dark">Medium: {{ risk_counts.medium }}</span></div>
+            <div><span class="badge bg-success">Low: {{ risk_counts.low }}</span></div>
+          </div>
+          <p class="small text-muted mt-2">Last updated: {{ last_updated|date:"M d, Y H:i" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Active Alerts <small class="text-danger ms-2">({{ critical_alerts_count }} critical)</small></h5>
+    </div>
+    <div class="card-body" id="alertsContainer">
+      {% if active_alerts %}
+        {% for alert in active_alerts %}
+          <div class="d-flex justify-content-between align-items-start mb-2 alert
+              {% if alert.alert_type == 'critical' %}alert-danger
+              {% elif alert.alert_type == 'high' %}alert-warning
+              {% elif alert.alert_type == 'medium' %}alert-info
+              {% else %}alert-secondary{% endif %}">
+            <div>
+              <strong>{{ alert.equipment.name }}</strong>
+              <div class="small">{{ alert.message }}</div>
+              <div class="small text-muted">Created: {{ alert.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+            <div class="text-end">
+              <button class="btn btn-sm btn-outline-primary mb-1" data-equip-id="{{ alert.equipment.id }}" onclick="openEquipModal(this)">Details</button>
+              <button class="btn btn-sm btn-success mb-1" onclick="ackAlert({{ alert.id }}, this)">Acknowledge</button>
+              <button class="btn btn-sm btn-secondary mb-1" onclick="dismissAlert({{ alert.id }}, this)">Dismiss</button>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-center text-muted mb-0">No active alerts 🎉</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Upcoming -->
+  <div class="card mb-3">
+    <div class="card-header"><h5 class="mb-0">Upcoming Maintenance</h5></div>
+    <div class="card-body table-responsive">
+      {% if upcoming_maintenance %}
+        <table class="table table-sm table-hover">
+          <thead class="table-light">
+            <tr><th>Equipment</th><th>Date</th><th>Type</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for r in upcoming_maintenance %}
+              <tr>
+                <td>{{ r.equipment.name }}</td>
+                <td>{{ r.scheduled_date|date:"M d, Y" }}</td>
+                <td>{{ r.get_maintenance_type_display }}</td>
+                <td><span class="badge {% if r.status == 'scheduled' %}bg-warning text-dark{% elif r.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}">{{ r.get_status_display }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-center text-muted mb-0">No upcoming maintenance scheduled.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Recent Maintenance History</h5></div>
+    <div class="card-body table-responsive">
+      {% if maintenance_history %}
+        <table class="table table-sm table-striped">
+          <thead class="table-light">
+            <tr><th>Equipment</th><th>Date</th><th>Type</th><th>Status</th><th>Cost</th></tr>
+          </thead>
+          <tbody>
+            {% for rec in maintenance_history %}
+              <tr>
+                <td>{{ rec.equipment.name }}</td>
+                <td>{{ rec.scheduled_date|date:"M d, Y" }}</td>
+                <td>{{ rec.get_maintenance_type_display }}</td>
+                <td>{{ rec.get_status_display }}</td>
+                <td>{{ rec.total_cost|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-center text-muted mb-0">No recent maintenance records.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Equipment Details Modal -->
+<div class="modal fade" id="equipmentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="equipmentModalTitle">Equipment Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="equipmentModalBody">
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JS dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+/* ====== Chart rendering ====== */
+(function() {
+  const chartData = {{ chart_data|default:"{}"|safe }};
+  if (chartData && chartData.labels) {
+    const ctx = document.getElementById('riskChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: chartData.labels,
+        datasets: [{
+          data: chartData.values,
+          backgroundColor: chartData.colors,
+          borderColor: '#fff',
+          borderWidth: 1
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+})();
+
+/* ====== CSRF helper for fetch ====== */
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+const csrftoken = getCookie('csrftoken');
+
+/* ====== AJAX: acknowledge/dismiss alerts ====== */
+async function ackAlert(alertId, btn) {
+  try {
+    btn.disabled = true;
+    const res = await fetch("{% url 'maintenance:acknowledge_alert_ajax' 0 %}".replace('/0/', '/' + alertId + '/'), {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrftoken, 'Accept': 'application/json'}
+    });
+    const data = await res.json();
+    if (data.ok) refreshAlerts();
+    else alert(data.error || 'Error acknowledging');
+  } catch (e) { console.error(e); alert('Request failed'); }
+  finally { btn.disabled = false; }
+}
+
+async function dismissAlert(alertId, btn) {
+  try {
+    btn.disabled = true;
+    const res = await fetch("{% url 'maintenance:dismiss_alert' 0 %}".replace('/0/', '/' + alertId + '/'), {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrftoken, 'Accept': 'application/json'}
+    });
+    const data = await res.json();
+    if (data.ok) refreshAlerts();
+    else alert(data.error || 'Error dismissing');
+  } catch (e) { console.error(e); alert('Request failed'); }
+  finally { btn.disabled = false; }
+}
+
+/* ====== Open equipment modal (AJAX fetch details) ====== */
+function openEquipModal(button) {
+  const equipId = button.getAttribute('data-equip-id') || button.dataset.equipId;
+  const modalEl = document.getElementById('equipmentModal');
+  const modal = new bootstrap.Modal(modalEl);
+  const body = document.getElementById('equipmentModalBody');
+  const title = document.getElementById('equipmentModalTitle');
+  body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+  title.textContent = 'Loading...';
+  modal.show();
+
+  fetch("{% url 'maintenance:equipment_detail_json' 0 %}".replace('/0/', '/' + equipId + '/'))
+    .then(r => r.json())
+    .then(json => {
+      if (!json.ok) {
+        body.innerHTML = '<div class="alert alert-danger">Access denied or error.</div>';
+        title.textContent = 'Error';
+        return;
+      }
+      const e = json.equipment;
+      title.textContent = e.name;
+      let html = `
+        <div class="row">
+          <div class="col-md-6">
+            <dl class="row">
+              <dt class="col-4">Type</dt><dd class="col-8">${e.type}</dd>
+              <dt class="col-4">Model</dt><dd class="col-8">${e.model}</dd>
+              <dt class="col-4">Year</dt><dd class="col-8">${e.year}</dd>
+              <dt class="col-4">Hours</dt><dd class="col-8">${e.total_hours}</dd>
+              <dt class="col-4">KM</dt><dd class="col-8">${e.total_km}</dd>
+              <dt class="col-4">City</dt><dd class="col-8">${e.city}</dd>
+            </dl>
+          </div>
+          <div class="col-md-6">
+      `;
+      if (json.prediction) {
+        const p = json.prediction;
+        html += `<h6>AI Prediction</h6>
+                 <p><strong>Risk:</strong> <span class="badge ${
+                   p.risk_level === 'critical' ? 'bg-danger' :
+                   p.risk_level === 'high' ? 'bg-warning text-dark' :
+                   p.risk_level === 'medium' ? 'bg-info text-dark' : 'bg-success'
+                 }">${p.risk_level}</span></p>
+                 <p><strong>Failure prob:</strong> ${p.failure_probability}%</p>
+                 <p><strong>Days:</strong> ${p.days_until_maintenance}</p>
+                 <p><strong>Predicted date:</strong> ${p.predicted_date || 'N/A'}</p>
+                 <p><strong>Confidence:</strong> ${p.confidence}%</p>
+                 <p><strong>Recommendations:</strong> ${p.recommendations || '—'}</p>`;
+      } else {
+        html += `<p class="text-muted">No active prediction for this equipment.</p>`;
+      }
+      html += `</div></div>`;
+      // usage logs
+      if (json.usage_logs && json.usage_logs.length) {
+        html += `<hr><h6>Recent Usage</h6><ul class="list-unstyled">`;
+        json.usage_logs.forEach(u => {
+          html += `<li>${u.date} — ${u.hours}h / ${u.km}km / ${u.fuel}L — ${u.terrain} — errors: ${u.errors}</li>`;
+        });
+        html += `</ul>`;
+      }
+      // maintenance records
+      if (json.maintenance_records && json.maintenance_records.length) {
+        html += `<hr><h6>Maintenance Records</h6><ul class="list-unstyled">`;
+        json.maintenance_records.forEach(m => {
+          html += `<li>${m.date} — ${m.type} — ${m.status} — KSh ${m.cost} — ${m.description}</li>`;
+        });
+        html += `</ul>`;
+      }
+      body.innerHTML = html;
+    })
+    .catch(err => {
+      body.innerHTML = '<div class="alert alert-danger">Failed to load details.</div>';
+      title.textContent = 'Error';
+      console.error(err);
+    });
+}
+
+/* ====== Alerts live refresh ====== */
+async function refreshAlerts() {
+  try {
+    const res = await fetch("{% url 'maintenance:alerts_json' %}");
+    const data = await res.json();
+    if (!data.ok) return;
+    const container = document.getElementById('alertsContainer');
+    if (!data.alerts.length) {
+      container.innerHTML = '<p class="text-center text-muted mb-0">No active alerts 🎉</p>';
+      return;
+    }
+    let html = '';
+    data.alerts.forEach(a => {
+      const typeClass = a.alert_type === 'critical' ? 'alert-danger' :
+                        a.alert_type === 'high' ? 'alert-warning' :
+                        a.alert_type === 'medium' ? 'alert-info' : 'alert-secondary';
+      html += `<div class="d-flex justify-content-between align-items-start mb-2 alert ${typeClass}">
+          <div>
+            <strong>${a.equipment_name}</strong>
+            <div class="small">${a.message || ''}</div>
+            <div class="small text-muted">Created: ${a.created_at}</div>
+          </div>
+          <div class="text-end">
+            <button class="btn btn-sm btn-outline-primary mb-1" data-equip-id="${a.equipment_name}" onclick="openEquipModal(this)">Details</button>
+            <button class="btn btn-sm btn-success mb-1" onclick="ackAlert(${a.id}, this)">Acknowledge</button>
+            <button class="btn btn-sm btn-secondary mb-1" onclick="dismissAlert(${a.id}, this)">Dismiss</button>
+          </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  } catch (e) {
+    console.error('Failed to refresh alerts', e);
+  }
+}
+
+/* initial listeners */
+document.getElementById('refreshBtn').addEventListener('click', () => { location.reload(); });
+
+/* poll alerts every 20s */
+setInterval(refreshAlerts, 20000);
+</script>
+<!-- Risk Chart -->
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-5 text-center">
+        <canvas id="riskChart" width="300" height="200"></canvas>
+      </div>
+      <div class="col-md-7">
+        <h5>Ask Gemini about an equipment</h5>
+        <div class="mb-2">
+          <select id="equipSelect" class="form-select">
+            <option value="">-- Select equipment --</option>
+            {% for e in equipment_list %}
+              <option value="{{ e.id }}">{{ e.name }} — {{ e.equipment_type.name|default:"" }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="input-group mb-2">
+          <input id="aiQuestion" class="form-control" placeholder="Ask Gemini (e.g. 'When is next maintenance due?')">
+          <button id="askBtn" class="btn btn-primary">Ask</button>
+        </div>
+        <div id="aiAnswer" class="border rounded p-2" style="min-height: 80px; background:#f8f9fa;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// chart rendering (data supplied by context.chart_data)
+(function(){
+  const chartData = {{ chart_data|default:"{}"|safe }};
+  if (chartData && chartData.labels) {
+    const ctx = document.getElementById('riskChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: chartData.labels,
+        datasets: [{ data: chartData.values, backgroundColor: chartData.colors }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+})();
+
+// Ask Gemini button logic
+document.getElementById('askBtn').addEventListener('click', async function() {
+  const equipId = document.getElementById('equipSelect').value;
+  const question = document.getElementById('aiQuestion').value.trim();
+  const answerEl = document.getElementById('aiAnswer');
+  if (!equipId) { alert('Select equipment first'); return; }
+  if (!question) { alert('Type a question'); return; }
+
+  answerEl.innerHTML = '<div class="text-muted">Thinking... <span class="spinner-border spinner-border-sm"></span></div>';
+
+  try {
+    const res = await fetch("{% url 'maintenance:ask_gemini' 0 %}".replace('/0/', '/' + equipId + '/'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({question})
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      answerEl.innerHTML = `<div class="text-danger">Error: ${data.error || 'Unknown'}</div>`;
+    } else {
+      // show response
+      answerEl.innerHTML = `<pre style="white-space:pre-wrap;">${data.answer}</pre>`;
+    }
+  } catch (err) {
+    answerEl.innerHTML = '<div class="text-danger">Request failed.</div>';
+    console.error(err);
+  }
+});
+
+// helper to read CSRF cookie
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
+  return v ? v.pop() : ''
+}
+</script>
+
+{% endblock %}

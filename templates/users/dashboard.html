@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - AgroHire{% endblock %}
+{% block content %}
+<section class="py-4 bg-light border-bottom">
+  <div class="container">
+    <h2 class="mb-1">Welcome back{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h2>
+    <p class="text-muted m-0">Here is a quick overview of your activity.</p>
+  </div>
+</section>
+
+<section class="py-4">
+  <div class="container">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted">Total bookings</div>
+                <div class="fs-2 fw-bold">{{ stats.total_bookings }}</div>
+              </div>
+              <i class="fas fa-calendar-check fa-2x text-primary"></i>
+            </div>
+            <div class="mt-2 small text-muted">Active: {{ stats.active_bookings }} • Completed: {{ stats.completed_bookings }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted">Payments</div>
+                <div class="fs-2 fw-bold">{{ payments_stats.total_payments }}</div>
+              </div>
+              <i class="fas fa-receipt fa-2x text-success"></i>
+            </div>
+            <div class="mt-2 small text-muted">Completed: {{ payments_stats.completed_payments }} • Pending: {{ payments_stats.pending_payments }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted">Owned equipment</div>
+                <div class="fs-2 fw-bold">{{ owned_count }}</div>
+              </div>
+              <i class="fas fa-tractor fa-2x text-secondary"></i>
+            </div>
+            <div class="mt-2 small text-muted">For equipment owners</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+      <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white">
+            <strong>Upcoming bookings</strong>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table mb-0">
+                <thead>
+                  <tr>
+                    <th>Equipment</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for b in upcoming %}
+                  <tr>
+                    <td>{{ b.equipment.name }}</td>
+                    <td>{{ b.start_date }}</td>
+                    <td>{{ b.end_date }}</td>
+                    <td><span class="badge bg-primary">{{ b.get_status_display }}</span></td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="/bookings/">View</a></td>
+                  </tr>
+                  {% empty %}
+                  <tr><td class="text-muted" colspan="5">No upcoming bookings.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white">
+            <strong>Recent payments</strong>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              {% for p in recent_payments %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="small text-muted">{{ p.created_at }}</div>
+                  <div><strong>KES {{ p.total_amount }}</strong> • {{ p.get_status_display }}</div>
+                </div>
+                <i class="fas fa-money-bill-wave text-success"></i>
+              </li>
+              {% empty %}
+              <li class="list-group-item text-muted">No payments yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if owned_equipment %}
+    <div class="row g-3 mt-1">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white">
+            <strong>Your equipment</strong>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table mb-0">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Daily rate</th>
+                    <th>City</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for e in owned_equipment %}
+                  <tr>
+                    <td><a href="/equipment/{{ e.id }}/">{{ e.name }}</a></td>
+                    <td>{{ e.equipment_type.name }}</td>
+                    <td>{{ e.get_status_display }}</td>
+                    <td>KES {{ e.daily_rate }}</td>
+                    <td>{{ e.city }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <a class="btn btn-primary" href="/owner/equipment/"><i class="fas fa-plus me-1"></i>Edit My Equipment</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

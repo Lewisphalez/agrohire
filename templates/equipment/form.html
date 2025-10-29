@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width:960px;">
+  <h2 class="mb-4">{{ title }}</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="row g-3">
+      <div class="col-md-8">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          {{ form.name }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Type</label>
+          {{ form.equipment_type }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          {{ form.description }}
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Model</label>
+            {{ form.model }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Year</label>
+            {{ form.year_manufactured }}
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label">Condition</label>
+            {{ form.condition }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label">Daily rate (KES)</label>
+            {{ form.daily_rate }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Hourly rate (KES)</label>
+            {{ form.hourly_rate }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Weekly rate (KES)</label>
+            {{ form.weekly_rate }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Monthly rate (KES)</label>
+            {{ form.monthly_rate }}
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label">Fuel type</label>
+            {{ form.fuel_type }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Fuel consumption (L/hr)</label>
+            {{ form.fuel_consumption }}
+          </div>
+        </div>
+
+        <div class="mb-3 mt-1">
+          <label class="form-label">Capacity</label>
+          {{ form.capacity }}
+        </div>
+
+        <!-- <div class="mb-3">
+          <label class="form-label">Specifications (JSON)</label>
+          {{ form.specifications }}
+          <div class="form-text">{{ form.specifications.help_text }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Features (JSON array)</label>
+          {{ form.features }}
+          <div class="form-text">{{ form.features.help_text }}</div>
+        </div> -->
+      </div>
+
+      <div class="col-md-4">
+        <div class="mb-3">
+          <label class="form-label">Main image</label>
+          {{ form.main_image }}
+        </div>
+        <div class="border rounded p-3 mb-3 bg-light">
+          <div class="mb-2"><strong>Location</strong></div>
+          <div class="mb-2">{{ form.address }}</div>
+          <div class="row g-2">
+            <div class="col-md-6">{{ form.city }}</div>
+            <div class="col-md-6">{{ form.state }}</div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-md-6">{{ form.country }}</div>
+            <div class="col-md-6">{{ form.latitude }}</div>
+          </div>
+          <div class="mt-1">{{ form.longitude }}</div>
+        </div>
+        <div class="border rounded p-3 bg-light">
+          <div class="mb-2"><strong>Availability</strong></div>
+          <div class="row g-2">
+            <div class="col-md-6">{{ form.minimum_booking_hours }}</div>
+            <div class="col-md-6">{{ form.maximum_booking_days }}</div>
+          </div>
+          <div class="form-check mt-2">
+            {{ form.is_active }}
+            <label class="form-check-label">Active</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary mt-3" type="submit">Save</button>
+    <a class="btn btn-outline-secondary mt-3" href="/owner/equipment/">Cancel</a>
+  </form>
+</div>
+{% endblock %}

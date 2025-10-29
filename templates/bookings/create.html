@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Create Booking - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width:720px;">
+  <h2 class="mb-4">Create Booking</h2>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="equipment_id" value="{{ equipment.id }}" />
+
+    <div class="mb-3">
+      <label class="form-label">Equipment</label>
+      <input class="form-control" value="{{ equipment.name }}" disabled />
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Start date & time</label>
+        <input class="form-control" type="datetime-local" name="start_date" required />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">End date & time</label>
+        <input class="form-control" type="datetime-local" name="end_date" required />
+      </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <label class="form-label">Duration (hours)</label>
+        <input class="form-control" type="number" min="1" name="duration_hours" value="8" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Estimated total</label>
+        <input class="form-control" value="KES {{ equipment.daily_rate }}" disabled />
+      </div>
+    </div>
+
+    <button class="btn btn-primary mt-3" type="submit">Create booking</button>
+  </form>
+</div>
+{% endblock %}

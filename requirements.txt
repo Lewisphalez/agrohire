@@ -1,0 +1,41 @@
+channels==4.3.1
+Django==5.2.5
+djangorestframework==3.16.1
+django-cors-headers==4.7.0
+Pillow==11.3.0
+celery==5.5.3
+redis==6.4.0
+django-channels==0.7.0
+requests==2.31.0
+python-dateutil==2.9.0.post0
+
+# For production
+# psycopg2-binary==2.9.9  # PostgreSQL adapter
+# gunicorn==21.2.0  # WSGI server
+# whitenoise==6.6.0  # Static file serving
+
+# For development
+# django-debug-toolbar==4.2.0
+# django-extensions==3.2.3
+
+# For testing
+# pytest==7.4.3
+# pytest-django==4.7.0
+# factory-boy==3.3.0
+
+# For API documentation
+# drf-yasg==1.21.7
+
+# For SMS services (choose one)
+# twilio==8.10.0  # Twilio SMS
+# africastalking==1.2.8  # Africa's Talking SMS
+
+# For push notifications
+# firebase-admin==6.2.0  # Firebase Cloud Messaging
+
+# For payment processing
+# stripe==7.8.0  # Stripe payments (alternative to M-Pesa)
+
+# For monitoring and logging
+# sentry-sdk==1.38.0
+# django-prometheus==2.3.1

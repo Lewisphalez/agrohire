@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Equipment - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="m-0">Equipment</h2>
+    <form class="d-flex" method="get" action="">
+      <input class="form-control me-2" type="search" name="q" value="{{ query }}" placeholder="Search equipment..." />
+      <button class="btn btn-outline-primary" type="submit">Search</button>
+    </form>
+  </div>
+
+  <div class="row g-4">
+    {% for e in items %}
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm">
+        {% if e.main_image %}
+        <img src="{{ e.main_image.url }}" class="card-img-top" style="height:200px;object-fit:cover;" />
+        {% else %}
+        <div class="bg-light d-flex align-items-center justify-content-center" style="height:200px;"><i class="fas fa-tractor fa-3x text-secondary"></i></div>
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ e.name }}</h5>
+          <p class="card-text text-muted">{{ e.city }}, {{ e.country }}</p>
+          <p class="card-text"><strong>KES {{ e.daily_rate }}</strong> / day</p>
+          <a href="/equipment/{{ e.id }}/" class="btn btn-primary">View details</a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p>No equipment found.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

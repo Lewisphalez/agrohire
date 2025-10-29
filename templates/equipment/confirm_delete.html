@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete Equipment - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width:720px;">
+  <h2 class="mb-3">Delete equipment</h2>
+  <div class="alert alert-warning">
+    Are you sure you want to delete <strong>{{ item.name }}</strong>? This action cannot be undone.
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Yes, delete</button>
+    <a class="btn btn-outline-secondary" href="/owner/equipment/">Cancel</a>
+  </form>
+</div>
+{% endblock %}

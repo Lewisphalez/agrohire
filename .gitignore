@@ -1,0 +1,18 @@
+# Gitignore file for a Django project
+
+# Environment
+/venv/
+/.env
+/celerybeat-schedule
+
+# Django
+/db.sqlite3
+/media/
+/static/
+
+# Python
+/**/*.pyc
+/__pycache__/
+
+# Logs
+/logs/

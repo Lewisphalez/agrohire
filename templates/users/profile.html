@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Profile - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width:700px;">
+  <h2 class="mb-4">Your Profile</h2>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      {% for field in form %}
+      <div class="col-md-6">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <div class="text-danger small">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Save changes</button>
+  </form>
+</div>
+{% endblock %}

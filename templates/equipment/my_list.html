@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}My Equipment - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="m-0">My Equipment</h2>
+    <a class="btn btn-primary" href="/owner/equipment/add/"><i class="fas fa-plus me-1"></i>Add Equipment</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Daily rate</th>
+          <th>Status</th>
+          <th>Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in items %}
+        <tr>
+          <td><a href="/equipment/{{ e.id }}/">{{ e.name }}</a></td>
+          <td>{{ e.equipment_type.name }}</td>
+          <td>KES {{ e.daily_rate }}</td>
+          <td>{{ e.get_status_display }}</td>
+          <td>{% if e.is_active %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="/owner/equipment/{{ e.id }}/edit/">Edit</a>
+            <a class="btn btn-sm btn-outline-danger" href="/owner/equipment/{{ e.id }}/delete/">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-muted">You have not added any equipment yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

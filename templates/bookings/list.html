@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}My Bookings - AgroHire{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="m-0">My Bookings</h2>
+    <a href="/equipment/" class="btn btn-outline-primary">Find equipment</a>
+  </div>
+
+  <div class="list-group">
+    {% for b in items %}
+    <div class="list-group-item">
+      <div class="d-flex w-100 justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-1">{{ b.equipment.name }}</h5>
+          <p class="mb-1">{{ b.start_date }} to {{ b.end_date }} • Total: KES {{ b.total_amount }}</p>
+          <small class="text-muted">Booking #{{ b.booking_number }}</small>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-primary">{{ b.get_status_display }}</span>
+          {% if b.status == 'pending' or b.status == 'confirmed' %}
+          <a class="btn btn-sm btn-outline-danger ms-2" href="/bookings/{{ b.id }}/cancel/">Cancel</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p>No bookings yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
