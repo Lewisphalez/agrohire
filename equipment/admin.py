@@ -51,7 +51,7 @@ class EquipmentTypeAdmin(admin.ModelAdmin):
 class EquipmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'equipment_type', 'owner', 'condition', 'status', 'daily_rate', 'is_available', 'location_display')
     list_filter = ('equipment_type', 'condition', 'status', 'fuel_type', 'is_active', 'created_at')
-    search_fields = ('name', 'description', 'model', 'owner__username', 'owner__business_name', 'address', 'city')
+    search_fields = ('name', 'description', 'model', 'owner__username', 'owner__business_name', 'city')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at', 'total_hours')
     
@@ -65,7 +65,7 @@ class EquipmentAdmin(admin.ModelAdmin):
             'fields': ('model', 'year_manufactured', 'condition', 'status', 'main_image')
         }),
         ('Location', {
-            'fields': ('latitude', 'longitude', 'address', 'city', 'state', 'country')
+            'fields': ('city', 'country')
         }),
         ('Pricing', {
             'fields': ('daily_rate', 'hourly_rate', 'weekly_rate', 'monthly_rate')
@@ -85,12 +85,12 @@ class EquipmentAdmin(admin.ModelAdmin):
     )
     
     def location_display(self, obj):
-        if obj.city and obj.state:
-            return f"{obj.city}, {obj.state}"
+        if obj.city and obj.country:
+            return f"{obj.city}, {obj.country}"
         elif obj.city:
             return obj.city
-        elif obj.state:
-            return obj.state
+        elif obj.country:
+            return obj.country
         return "Not specified"
     location_display.short_description = 'Location'
     
