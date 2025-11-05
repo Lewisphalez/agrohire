@@ -14,7 +14,15 @@
       <h2>{{ item.name }}</h2>
       <p class="text-muted">{{ item.city }}, {{ item.country }}</p>
       <p>{{ item.description }}</p>
-      <p class="h5">KES {{ item.daily_rate }} / day</p>
+      {% if price_has_changed %}
+        <p class="h5">
+          <span class="badge bg-danger me-2">Offer</span>
+          <del class="text-muted">KES {{ original_price|floatformat:2 }}</del>
+          <strong class="text-success">KES {{ new_price|floatformat:2 }}</strong> / day
+        </p>
+      {% else %}
+        <p class="h5">KES {{ item.daily_rate }} / day</p>
+      {% endif %}
       <a class="btn btn-primary mt-3" href="/bookings/create/?equipment={{ item.id }}">Book now</a>
     </div>
   </div>

@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden
 from .models import Equipment
 from .forms import EquipmentForm
-
+from pricing.models import SeasonalPricing
+from django.utils import timezone
 
 def equipment_list(request):
     query = request.GET.get('q', '')
@@ -13,10 +14,35 @@ def equipment_list(request):
         items = items.filter(name__icontains=query)
     return render(request, 'equipment/list.html', {'items': items, 'query': query})
 
-
 def equipment_detail(request, pk):
     item = get_object_or_404(Equipment, pk=pk)
-    return render(request, 'equipment/detail.html', {'item': item})
+    
+    # Dynamic Pricing Logic
+    original_price = item.daily_rate
+    new_price = original_price
+    price_has_changed = False
+    
+    today = timezone.now().date()
+    seasonal_rule = SeasonalPricing.objects.filter(
+        equipment_type=item.equipment_type,
+        is_active=True,
+        start_date__lte=today,
+        end_date__gte=today
+    ).first()
+    
+    if seasonal_rule:
+        multiplier = seasonal_rule.daily_multiplier
+        new_price = original_price * multiplier
+        price_has_changed = True
+        
+    context = {
+        'item': item,
+        'original_price': original_price,
+        'new_price': new_price,
+        'price_has_changed': price_has_changed,
+    }
+    
+    return render(request, 'equipment/detail.html', context)
 
 
 @login_required

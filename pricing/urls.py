@@ -4,5 +4,5 @@ from . import views
 app_name = 'pricing'
 
 urlpatterns = [
-    # URL patterns will be added when views are created
+    path('test-price/<int:equipment_id>/', views.test_price, name='test_price'),
 ]
