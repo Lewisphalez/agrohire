@@ -5,55 +5,46 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg
+from django.db.models import Avg, Count, Q
+from django.utils import timezone
 
 from equipment.models import Equipment
 from .models import MaintenancePrediction, MaintenanceAlert, MaintenanceRecord
-from .rag_pipeline import build_equipment_context, generate_gemini_answer  # ✅ RAG pipeline
 
-
-# =============================================================================
-# 🧠 MAIN MAINTENANCE HUB VIEW
-# =============================================================================
 @login_required
 def maintenance_hub(request):
     """
     Displays equipment list, active alerts, and predictive stats
     in the main maintenance dashboard.
     """
-    # ✅ Get all equipment
     equipment_list = Equipment.objects.all().order_by("name")
-
-    # ✅ Recent active alerts (exclude dismissed)
-    alerts = (
-        MaintenanceAlert.objects.exclude(status="dismissed")
-        .order_by("-created_at")[:5]
+    
+    active_alerts = MaintenanceAlert.objects.exclude(status="dismissed").order_by("-created_at")
+    
+    predictions = MaintenancePrediction.objects.filter(is_active=True).select_related("equipment")
+    
+    risk_counts = predictions.aggregate(
+        critical=Count('id', filter=Q(risk_level='critical')),
+        high=Count('id', filter=Q(risk_level='high')),
+        medium=Count('id', filter=Q(risk_level='medium')),
+        low=Count('id', filter=Q(risk_level='low')),
     )
-
-    # ✅ Active maintenance predictions
-    predictions = (
-        MaintenancePrediction.objects.filter(is_active=True)
-        .select_related("equipment")
-    )
-
-    # ✅ Average failure probability (fix from aggregate_avg -> aggregate)
-    avg_failure_prob = (
-        predictions.aggregate(avg_prob=Avg("predicted_failure_probability"))["avg_prob"] or 0
-    )
-    avg_failure_prob = round(avg_failure_prob, 2)
-
-    # ✅ Recent maintenance records (for display)
-    recent_records = MaintenanceRecord.objects.order_by("-scheduled_date")[:10]
-
-    # ✅ Build context safely — everything iterable
+    
+    chart_data = {
+        "labels": ["Critical", "High", "Medium", "Low"],
+        "values": [risk_counts['critical'], risk_counts['high'], risk_counts['medium'], risk_counts['low']],
+        "colors": ["#dc3545", "#ffc107", "#0dcaf0", "#198754"],
+    }
+    
     context = {
         "equipment_list": equipment_list,
-        "alerts": alerts,
-        "predictions": predictions,
-        "recent_records": recent_records,
-        "total_equipment": equipment_list.count(),
-        "active_alerts_count": alerts.count(),
-        "avg_failure_prob": avg_failure_prob,
+        "active_alerts": active_alerts[:5],
+        "critical_alerts_count": active_alerts.filter(alert_type='critical').count(),
+        "risk_counts": risk_counts,
+        "chart_data": chart_data,
+        "last_updated": timezone.now(),
+        "maintenance_history": MaintenanceRecord.objects.order_by("-scheduled_date")[:5],
+        "upcoming_maintenance": MaintenanceRecord.objects.filter(status='scheduled').order_by("scheduled_date")[:5],
     }
 
     return render(request, "maintenance/hub.html", context)
