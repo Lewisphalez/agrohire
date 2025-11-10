@@ -21,7 +21,15 @@
           <strong class="text-success">KES {{ new_price|floatformat:2 }}</strong> / day
         </p>
       {% else %}
-        <p class="h5">KES {{ item.daily_rate }} / day</p>
+        {% with rule=item.active_seasonal_rule %}
+      <div class="d-flex align-items-center">
+        <p class="h5 me-3">KES {{ item.get_current_price }} / day</p>
+        {% if rule %}
+          <p class="h6 text-muted me-3"><del>KES {{ item.daily_rate }}</del></p>
+          <span class="badge bg-success">{{ rule.name }}</span>
+        {% endif %}
+      </div>
+      {% endwith %}
       {% endif %}
       <a class="btn btn-primary mt-3" href="/bookings/create/?equipment={{ item.id }}">Book now</a>
     </div>

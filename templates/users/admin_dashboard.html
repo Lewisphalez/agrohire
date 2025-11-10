@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - AgroHire{% endblock %}
+{% block content %}
+<section class="py-4 bg-dark text-white border-bottom">
+  <div class="container">
+    <h2 class="mb-1"><i class="fas fa-cogs me-2"></i>Admin Dashboard</h2>
+    <p class="text-white-50 m-0">A high-level overview of your platform's activity.</p>
+  </div>
+</section>
+
+<section class="py-4">
+  <div class="container">
+    <!-- Key Statistics -->
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 bg-primary text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-white-75">Total Revenue</div>
+                <div class="fs-2 fw-bold">KES {{ stats.total_revenue|floatformat:2 }}</div>
+              </div>
+              <i class="fas fa-dollar-sign fa-2x text-white-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 bg-info text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-white-75">Total Users</div>
+                <div class="fs-2 fw-bold">{{ stats.total_users }}</div>
+              </div>
+              <i class="fas fa-users fa-2x text-white-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 bg-success text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-white-75">Total Bookings</div>
+                <div class="fs-2 fw-bold">{{ stats.total_bookings }}</div>
+              </div>
+              <i class="fas fa-calendar-check fa-2x text-white-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 bg-secondary text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-white-75">Total Equipment</div>
+                <div class="fs-2 fw-bold">{{ stats.total_equipment }}</div>
+              </div>
+              <i class="fas fa-tractor fa-2x text-white-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-3 mt-1">
+      <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white">
+            <strong><i class="fas fa-users me-2"></i>Recent User Signups</strong>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              {% for user in recent_users %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div><strong>{{ user.username }}</strong> ({{ user.get_role_display }})</div>
+                  <div class="small text-muted">Joined: {{ user.date_joined|date:"M d, Y" }}</div>
+                </div>
+                <a href="{% url 'admin:users_user_change' user.id %}" class="btn btn-sm btn-outline-secondary">Manage</a>
+              </li>
+              {% empty %}
+              <li class="list-group-item text-muted">No recent signups.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white">
+            <strong><i class="fas fa-receipt me-2"></i>Recent Bookings</strong>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              {% for booking in recent_bookings %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div><strong>{{ booking.equipment.name }}</strong> booked by {{ booking.user.username }}</div>
+                  <div class="small text-muted">{{ booking.created_at|date:"M d, Y H:i" }}</div>
+                </div>
+                <span class="badge bg-primary">{{ booking.get_status_display }}</span>
+              </li>
+              {% empty %}
+              <li class="list-group-item text-muted">No recent bookings.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

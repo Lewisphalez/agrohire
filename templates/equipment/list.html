@@ -2,13 +2,40 @@
 {% block title %}Equipment - AgroHire{% endblock %}
 {% block content %}
 <div class="container py-5">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="m-0">Equipment</h2>
-    <form class="d-flex" method="get" action="">
-      <input class="form-control me-2" type="search" name="q" value="{{ query }}" placeholder="Search equipment..." />
-      <button class="btn btn-outline-primary" type="submit">Search</button>
-    </form>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="m-0">Browse Equipment</h2>
   </div>
+
+  <!-- Filter Form -->
+  <form class="card card-body mb-4" method="get" action="">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label for="q" class="form-label">Search by name</label>
+        <input class="form-control" type="search" id="q" name="q" value="{{ query }}" placeholder="e.g., John Deere Tractor">
+      </div>
+      <div class="col-md-3">
+        <label for="type" class="form-label">Type</label>
+        <select class="form-select" name="type" id="type">
+          <option value="">All Types</option>
+          {% for type in equipment_types %}
+            <option value="{{ type.id }}" {% if type_filter == type.id|stringformat:"s" %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="city" class="form-label">City</label>
+        <select class="form-select" name="city" id="city">
+          <option value="">All Cities</option>
+          {% for city in cities %}
+            <option value="{{ city }}" {% if city_filter == city %}selected{% endif %}>{{ city }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" type="submit">Filter</button>
+      </div>
+    </div>
+  </form>
 
   <div class="row g-4">
     {% for e in items %}
@@ -22,13 +49,28 @@
         <div class="card-body">
           <h5 class="card-title">{{ e.name }}</h5>
           <p class="card-text text-muted">{{ e.city }}, {{ e.country }}</p>
-          <p class="card-text"><strong>KES {{ e.daily_rate }}</strong> / day</p>
-          <a href="/equipment/{{ e.id }}/" class="btn btn-primary">View details</a>
+          {% with rule=e.active_seasonal_rule %}
+          <div class="d-flex align-items-center">
+            <p class="card-text me-2"><strong>KES {{ e.get_current_price }}</strong> / day</p>
+            {% if rule %}
+              <p class="card-text text-muted"><del>KES {{ e.daily_rate }}</del></p>
+            {% endif %}
+          </div>
+          {% if rule %}
+            <span class="badge bg-success mb-2">{{ rule.name }}</span>
+          {% endif %}
+          {% endwith %}
+          <a href="{% url 'equipment:detail' e.id %}" class="btn btn-primary">View details</a>
         </div>
       </div>
     </div>
     {% empty %}
-    <p>No equipment found.</p>
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <p class="mb-0">No equipment found matching your criteria.</p>
+            <a href="{% url 'equipment:list' %}" class="alert-link">Clear filters</a>
+        </div>
+    </div>
     {% endfor %}
   </div>
 </div>

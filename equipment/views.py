@@ -2,17 +2,39 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden
-from .models import Equipment
+from .models import Equipment, EquipmentType
 from .forms import EquipmentForm
 from pricing.models import SeasonalPricing
 from django.utils import timezone
 
 def equipment_list(request):
-    query = request.GET.get('q', '')
     items = Equipment.objects.filter(is_active=True)
+    
+    # Get filter parameters from request
+    type_filter = request.GET.get('type')
+    city_filter = request.GET.get('city')
+    query = request.GET.get('q', '')
+
     if query:
         items = items.filter(name__icontains=query)
-    return render(request, 'equipment/list.html', {'items': items, 'query': query})
+    if type_filter:
+        items = items.filter(equipment_type__id=type_filter)
+    if city_filter:
+        items = items.filter(city__iexact=city_filter)
+
+    # Get choices for filters
+    equipment_types = EquipmentType.objects.all()
+    cities = Equipment.objects.values_list('city', flat=True).distinct()
+
+    context = {
+        'items': items,
+        'equipment_types': equipment_types,
+        'cities': cities,
+        'query': query,
+        'type_filter': type_filter,
+        'city_filter': city_filter,
+    }
+    return render(request, 'equipment/list.html', context)
 
 def equipment_detail(request, pk):
     item = get_object_or_404(Equipment, pk=pk)

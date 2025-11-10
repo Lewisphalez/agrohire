@@ -11,12 +11,66 @@
 <section class="py-4">
   <div class="container">
     <div class="row g-3">
-      <div class="col-md-4">
+      {% if user.is_equipment_owner %}
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 bg-success text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-white-75">Total Earnings</div>
+                <div class="fs-2 fw-bold">KES {{ owner_stats.total_earnings|floatformat:2 }}</div>
+              </div>
+              <i class="fas fa-dollar-sign fa-2x text-white-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
               <div>
-                <div class="text-muted">Total bookings</div>
+                <div class="text-muted">Booking Requests</div>
+                <div class="fs-2 fw-bold">{{ owner_stats.booking_requests }}</div>
+              </div>
+              <i class="fas fa-bell fa-2x text-primary"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted">My Equipment</div>
+                <div class="fs-2 fw-bold">{{ owner_stats.owned_count }}</div>
+              </div>
+              <i class="fas fa-tractor fa-2x text-secondary"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted">My Bookings</div>
+                <div class="fs-2 fw-bold">{{ stats.total_bookings }}</div>
+              </div>
+              <i class="fas fa-calendar-check fa-2x text-info"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted">My Bookings</div>
                 <div class="fs-2 fw-bold">{{ stats.total_bookings }}</div>
               </div>
               <i class="fas fa-calendar-check fa-2x text-primary"></i>
@@ -25,12 +79,12 @@
           </div>
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-6">
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
               <div>
-                <div class="text-muted">Payments</div>
+                <div class="text-muted">My Payments</div>
                 <div class="fs-2 fw-bold">{{ payments_stats.total_payments }}</div>
               </div>
               <i class="fas fa-receipt fa-2x text-success"></i>
@@ -39,20 +93,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-body">
-            <div class="d-flex align-items-center justify-content-between">
-              <div>
-                <div class="text-muted">Owned equipment</div>
-                <div class="fs-2 fw-bold">{{ owned_count }}</div>
-              </div>
-              <i class="fas fa-tractor fa-2x text-secondary"></i>
-            </div>
-            <div class="mt-2 small text-muted">For equipment owners</div>
-          </div>
-        </div>
-      </div>
+      {% endif %}
     </div>
 
     <div class="row g-3 mt-1">

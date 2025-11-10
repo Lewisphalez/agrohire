@@ -8,6 +8,7 @@ from django.utils import timezone
 
 @receiver(post_save, sender=Equipment)
 def auto_create_prediction(sender, instance, created, **kwargs):
+    from maintenance.rag_pipeline import build_equipment_context, generate_gemini_answer
     if not created:
         return
     # Build a simple prompt (or call your trained model instead of Gemini)

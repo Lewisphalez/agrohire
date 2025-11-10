@@ -4,13 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from django.utils import timezone
+from django.db.models import Sum, Count, Q
 
 from .forms import SignUpForm, LoginForm, UserProfileForm
 from .models import User
 from bookings.models import Booking
 from equipment.models import Equipment
 from payments.models import Payment
-
 
 def signup_view(request):
     if request.method == 'POST':
@@ -46,10 +46,11 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    now = timezone.now()
     user = request.user
+    if user.is_staff or user.is_superuser:
+        return redirect('users:admin_dashboard')
 
-    # Bookings summary for this user
+    now = timezone.now()
     my_bookings = Booking.objects.filter(user=user).order_by('-created_at')[:5]
     upcoming = Booking.objects.filter(user=user, start_date__gte=now).order_by('start_date')[:3]
     stats = {
@@ -58,32 +59,43 @@ def dashboard_view(request):
         'completed_bookings': Booking.objects.filter(user=user, status='completed').count(),
     }
 
-    # If equipment owner, show owned equipment snapshot
-    owned_equipment = []
-    owned_count = 0
-    if getattr(user, 'is_equipment_owner', False):
-        owned_qs = Equipment.objects.filter(owner=user)
-        owned_count = owned_qs.count()
-        owned_equipment = owned_qs.order_by('-created_at')[:5]
-
-    # Payments snapshot
-    recent_payments = Payment.objects.filter(user=user).order_by('-created_at')[:5]
-    payments_stats = {
-        'total_payments': Payment.objects.filter(user=user).count(),
-        'completed_payments': Payment.objects.filter(user=user, status='completed').count(),
-        'pending_payments': Payment.objects.filter(user=user, status__in=['pending', 'processing']).count(),
-    }
-
     context = {
         'stats': stats,
         'upcoming': upcoming,
         'my_bookings': my_bookings,
-        'owned_equipment': owned_equipment,
-        'owned_count': owned_count,
-        'recent_payments': recent_payments,
-        'payments_stats': payments_stats,
     }
+
+    if getattr(user, 'is_equipment_owner', False):
+        owned_equipment = Equipment.objects.filter(owner=user)
+        owner_stats = {
+            'owned_count': owned_equipment.count(),
+            'total_earnings': Payment.objects.filter(booking__equipment__in=owned_equipment, status='completed').aggregate(total=Sum('amount'))['total'] or 0,
+            'booking_requests': Booking.objects.filter(equipment__in=owned_equipment, status__in=['pending', 'confirmed']).count(),
+        }
+        context['owner_stats'] = owner_stats
+        context['owned_equipment'] = owned_equipment.order_by('-created_at')[:5]
+
     return render(request, 'users/dashboard.html', context)
+
+
+@login_required
+def admin_dashboard_view(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+
+    stats = {
+        'total_users': User.objects.count(),
+        'total_equipment': Equipment.objects.count(),
+        'total_bookings': Booking.objects.count(),
+        'total_revenue': Payment.objects.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0,
+    }
+
+    context = {
+        'stats': stats,
+        'recent_users': User.objects.order_by('-date_joined')[:5],
+        'recent_bookings': Booking.objects.order_by('-created_at')[:5],
+    }
+    return render(request, 'users/admin_dashboard.html', context)
 
 
 @login_required

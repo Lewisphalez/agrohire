@@ -11,6 +11,9 @@ from django.utils import timezone
 from equipment.models import Equipment
 from .models import MaintenancePrediction, MaintenanceAlert, MaintenanceRecord
 
+from .rag_pipeline import build_equipment_context, generate_gemini_answer
+
+
 @login_required
 def maintenance_hub(request):
     """
@@ -182,9 +185,9 @@ def ask_gemini(request, equipment_id):
 
         # 2️⃣ Combine context + user question
         full_prompt = f"""
-**Role:** You are a helpful and knowledgeable AI maintenance assistant for AgroHire, a smart farm management system. Your goal is to provide clear, concise, and actionable advice to users based on the equipment data provided.
+**Role:** You are a helpful and knowledgeable AI maintenance assistant for AgroHire.
 
-**Task:** Answer the user's question based *only* on the context provided below.
+**Task:** Answer the user's question based *only* on the context provided below. Format your response using Markdown for a clear, line-by-line presentation.
 
 **Context:**
 ---
@@ -193,15 +196,22 @@ def ask_gemini(request, equipment_id):
 
 **User Question:** "{user_question}"
 
-**Response Guidelines:**
-1.  **Analyze the Context:** Carefully review all the provided data: equipment details, predictions, maintenance history, and usage logs.
-2.  **Direct Answer:** Provide a direct and clear answer to the user's question.
-3.  **Explain Your Reasoning:** Briefly explain *why* you are giving this answer, referencing specific data points from the context (e.g., "based on the high error count in recent usage logs...").
-4.  **Actionable Recommendation:** If applicable, provide a clear, actionable recommendation (e.g., "It is recommended to schedule a diagnostic check-up within the next 7 days.").
-5.  **Use Markdown:** Format your response using Markdown for readability (e.g., use bullet points, bold text).
-6.  **If Unsure:** If the context does not contain enough information to answer the question, state that clearly. Do not guess or provide information not present in the context.
+**Response Format (Each item on a new line):**
+
+**Summary:** [Provide a brief, one-sentence summary of the answer here]
+
+*   **Risk Level:** [e.g., Medium]
+*   **Recommended Action:** [e.g., Schedule standard service]
+*   **Due Date:** [e.g., Within 30 days]
+
+**🧠 Reasoning:**
+[Briefly explain the reasons for your recommendation, referencing specific data from the context.]
+
+**🔧 Next Step:**
+[Provide a clear, actionable next step.]
 
 ---
+
 **Your Answer:**
 """
 

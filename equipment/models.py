@@ -147,11 +147,50 @@ class Equipment(models.Model):
     def calculate_rate(self, duration_hours):
         """Calculate rate based on duration"""
         if duration_hours <= 8:  # Daily rate
-            return self.daily_rate
-        elif duration_hours <= 168:  # Weekly rate (7 days * 24 hours)
-            return self.weekly_rate or (self.daily_rate * 7)
+            return self.get_current_price('daily')
+        elif duration_hours <= 168:  # Weekly rate
+            return self.get_current_price('weekly')
         else:  # Monthly rate
-            return self.monthly_rate or (self.daily_rate * 30)
+            return self.get_current_price('monthly')
+
+    @property
+    def active_seasonal_rule(self):
+        from pricing.models import SeasonalPricing
+        from django.utils import timezone
+        today = timezone.now().date()
+        return SeasonalPricing.objects.filter(
+            equipment_type=self.equipment_type,
+            is_active=True,
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+
+    def get_current_price(self, rate_type='daily'):
+        """Calculates the current price including seasonal adjustments."""
+        rule = self.active_seasonal_rule
+        if not rule:
+            if rate_type == 'hourly':
+                return self.hourly_rate
+            elif rate_type == 'weekly':
+                return self.weekly_rate or self.daily_rate * 7
+            elif rate_type == 'monthly':
+                return self.monthly_rate or self.daily_rate * 30
+            return self.daily_rate
+
+        if rate_type == 'hourly':
+            base_price = rule.fixed_hourly_rate or self.hourly_rate
+            return base_price * rule.hourly_multiplier
+        elif rate_type == 'daily':
+            base_price = rule.fixed_daily_rate or self.daily_rate
+            return base_price * rule.daily_multiplier
+        elif rate_type == 'weekly':
+            base_price = self.weekly_rate or self.daily_rate * 7
+            return base_price * rule.daily_multiplier
+        elif rate_type == 'monthly':
+            base_price = self.monthly_rate or self.daily_rate * 30
+            return base_price * rule.daily_multiplier
+        
+        return self.daily_rate
 
 
 class EquipmentImage(models.Model):
